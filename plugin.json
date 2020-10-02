@@ -1,7 +1,7 @@
 {
    "pluginmetadataversion": 2,
    "name": "logrn",
-   "author": "log rename",
+   "author": "catnip",
    "type": [
       "helper"
    ],
