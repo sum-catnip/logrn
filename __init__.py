@@ -18,7 +18,7 @@ def rename_caller(callee: Function, caller: Function, parami: int):
         if i.operands[1].constant == callee.start:
             i = i.operands[2][parami]
             if i.operation == mlilop.MLIL_CONST_PTR:
-                name: str = caller.view.get_string_at(i.constant).value
+                name: str = caller.view.get_string_at(i.constant).value.split('(', 1)[0]
                 caller.view.define_auto_symbol(Symbol(
                     caller.symbol.type,
                     caller.symbol.address,
