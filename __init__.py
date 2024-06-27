@@ -1,11 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor, wait
 
-from binaryninja.interaction import get_text_line_input
-from binaryninja.function import Variable
-from binaryninja.mediumlevelil import MediumLevelILInstruction
+from binaryninja import (BackgroundTaskThread, BinaryView, Function,
+                         PluginCommand, Symbol, log_info)
 from binaryninja.enums import MediumLevelILOperation as mlilop
-from binaryninja import (PluginCommand, BinaryView, Function, BackgroundTaskThread, Symbol,
-                         log_info, log_warn, log_debug, log_error)
+from binaryninja.function import Variable
+from binaryninja.interaction import get_choice_input
+from binaryninja.mediumlevelil import MediumLevelILInstruction
 
 
 def iscall(i: MediumLevelILInstruction):
@@ -35,22 +35,18 @@ class RenameTask(BackgroundTaskThread):
         self.func = func
 
     def run(self):
-        param_str: str = get_text_line_input("enter name of parameter",
-                                             "parameter name").decode('utf-8')
-        try:
-            param = next(p for p in self.func.parameter_vars if p.name == param_str)
-            parami: int = self.func.parameter_vars.vars.index(param)
-        except StopIteration:
-            log_error(f'arg {param_str} not found')
+        choices = [n.name for n in self.func.type.parameters]
+        param_idx: int|None = get_choice_input("Select parameter to use as name", "logrn", choices)
+        if param_idx is None:
             return
 
         # for commercial users
         with ThreadPoolExecutor(16) as t:
             log_info(f'processing {len(self.func.callers)} callers')
-            # so i would filter for f.auto
-            # but the flag is extremely unreliable
+            # filter for funcs that have not been renamed
             for c in self.func.callers:
-                t.submit(rename_caller, self.func, c, parami)
+                if c.symbol.auto:
+                    t.submit(rename_caller, self.func, c, param_idx)
 
         log_info('renaming done')
     def cancel(self): pass
